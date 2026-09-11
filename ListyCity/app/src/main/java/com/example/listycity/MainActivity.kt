@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,6 +41,7 @@ class MainActivity : ComponentActivity() {
                     CityListScreen(
                         cities = cityRepository.cities,
                         onAddCity = {cityRepository.addCity( it )},
+                        onDeleteCity = { cityRepository.deleteCity( it ) },
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -51,12 +53,14 @@ class MainActivity : ComponentActivity() {
 fun CityListScreen(
     cities: List<String>,
     onAddCity: (String) -> Unit,
+    onDeleteCity: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var newCityName by remember { mutableStateOf(value = "") }
+    var selectedCity by remember { mutableStateOf("") }
 
     Column(modifier = modifier.fillMaxSize()) {
-        Row() {
+        Row {
             OutlinedTextField(
                 value = newCityName,
                 onValueChange = {newCityName = it },
@@ -67,13 +71,25 @@ fun CityListScreen(
             Button(onClick =  {
                 if (newCityName.isNotBlank()) {
                     onAddCity(newCityName)
-                    newCityName
+                    newCityName = ""
                 }
             }) {Text("Add City") }
+            Button(onClick =  {
+                if (selectedCity.isNotBlank()) {
+                    onDeleteCity(selectedCity)
+                    selectedCity = ""
+                }
+            }) {Text("Delete City") }
         }
         LazyColumn(modifier = modifier.fillMaxSize()) {
             items(cities){
-                    city -> CityRow(city=city)
+                    city ->
+                CityRow(
+                    city=city,
+                    onClick = {
+                        selectedCity = if (selectedCity == city) "" else city
+                    }
+                )
             }
         }
     }
@@ -82,11 +98,11 @@ fun CityListScreen(
 }
 
 @Composable
-fun CityRow(city: String) {
+fun CityRow(city: String, onClick: () -> Unit) {
     Text(
         text = city,
         fontSize = 28.sp,
-        modifier = Modifier.fillMaxWidth().padding(horizontal=18.dp, vertical=14.dp)
+        modifier = Modifier.fillMaxWidth().clickable { onClick() } .padding(horizontal=18.dp, vertical=14.dp)
     )
 }
 
@@ -115,5 +131,8 @@ class CityRepository {
 
     fun addCity(city: String) {
         _cities.add(city)
+    }
+    fun deleteCity(city: String) {
+        _cities.remove(city)
     }
 }
